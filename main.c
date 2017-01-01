@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #define NUM_METHOD 40
 #define NUM_BUFFER 130
 #define NUM_BOOK 100
-
 
 
 //struct of book
@@ -23,14 +23,13 @@ void rm_n (char *string) {
 }
 
 
+//NOTE:"file_" FUNCTION TO CHANGE FILE, "book_" FUNCTION TO CHANGE STRUCT
 //function to read file. return the number of books.
 int file_read(FILE *fp,str_book *book) {
         char buf[NUM_BUFFER];
         int type1,type2;
         int count = 0;
         int i;
-        //狗屎！C不允许初始化以外的字符串赋值给数组
-        //并且不知道为什么结构体成员指针莫名爆炸
         //只能这样了
         char *name = (char*)malloc(sizeof(char) * NUM_METHOD);
         char *auther = (char*)malloc(sizeof(char) * NUM_METHOD);
@@ -51,24 +50,39 @@ int file_read(FILE *fp,str_book *book) {
 
                 count ++;
         }
-        printf ("Read %u books\n",count);
 
         return count;
 }
 
 
-//function to list books
-void file_list (int count,str_book *book) {
+//function to write file
+void file_write (FILE *fp,str_book *book,int count,char flag) {
+        char buf[NUM_BUFFER];
         int i;
-        printf ("Here's book's listi:\n");
-        for (i = 0;i < count;i++)
-                printf ("%d. <%s> by %s, Type:%s\n"
-                        ,i+1,book[i].name,book[i].auther,book[i].type);
-}
 
+        if (flag = 'r') {
+                rewind (fp);
+                ftruncate (fileno(fp),0);
+                for (i = 0;i < count;i++) {
+                        sprintf (buf,"%s-%s-%s\n"
+                                 ,book[i].name,book[i].auther,book[i].type);
+                        fputs (buf,fp);
+                }
+                puts ("File written");
+        } else if (flag = 'a') {
+                sprintf (buf,"%s-%s-%s\n"
+                         ,book[count].name,book[count].auther,book[count].type);
+                fputs (buf,fp);
+                puts ("File written");
+        } else {
+                puts ("Error:Exaccept flag!");
+        }
+}
+                
+        
 
 //function to add book
-int file_add (FILE *fp,str_book *book,int count) {
+int book_add (FILE *fp,str_book *book,int count) {
         char buf[NUM_BUFFER];
 
         if (count >= NUM_BOOK) {
@@ -86,13 +100,52 @@ int file_add (FILE *fp,str_book *book,int count) {
         fgets (book[count].type,NUM_METHOD,stdin);
         rm_n (book[count].type);
 
-        book[count].count = count + 1;
-        
-        sprintf (buf,"%s-%s-%s\n"
-                 ,book[count].name,book[count].auther,book[count].type);
-        fputs (buf,fp);
+        book[count].count = count+1;
+        count ++;
 
-        return ++count;
+        file_write (fp,book,count,'a');
+
+        return count;
+}
+
+
+//function to list books
+void book_list (int count,str_book *book) {
+        int i;
+
+        printf ("Here's book's list:\n");
+        for (i = 0;i < count;i++)
+                printf ("%d. <%s> by %s, Type:%s\n"
+                        ,i+1,book[i].name,book[i].auther,book[i].type);
+}
+
+
+//function to delete book
+int book_delete (FILE *fp,str_book *book,int count) {
+        int num_delete,i;
+        str_book book_bak[NUM_BOOK];
+
+        printf ("Which number of book do you want to delete?\n>");
+        scanf ("%d",&num_delete);
+        while (getchar() != '\n');
+        
+        if ( num_delete > count ) {
+                printf ("Error:No such book\n");
+                return count;
+        }
+
+        for (i = 0 ; i < count ; i++) {
+                book_bak[i] = book[i];
+        }
+        for (i = num_delete-1 ; i < count ; i ++) {
+                book[i].count --;
+                book[i] = book_bak[i+1];
+        }
+        count --;
+        
+        file_write (fp,book,count,'r');
+
+        return count;
 }
 
 
@@ -112,28 +165,31 @@ int main (int argc,char *argv[]) {
                 return 1;
         }
 
-        printf ("#########The Books Manager#########\n"
-                "r:read l:list a:add d:delete q:quit\n"
-                "###################################\n");
+        printf ("##########The Book Manager##########\n"
+                "    l:list a:add d:delete q:quit\n"
+                "####################################\n");
+        count = file_read (fp,book);
+        printf ("%d books has read from %s.\n",count,argv[1]);
 
         while (1) {
                 printf(">");
-                scanf ("%c",&newarg);
-                getchar();
+                newarg = getchar();
+                while (getchar() != '\n');
 
                 switch (newarg) {
                         case 'r': 
                                 count = file_read (fp,book);
                                 break;
                         case 'l':
-                                file_list (count,book);
+                                book_list (count,book);
                                 break;
                         case 'a': 
-                                count = file_add (fp,book,count);
+                                count = book_add (fp,book,count);
                                 break;
-                        /*
-                        case 'd': file_delete; break;
-                        */
+                        case 'd':
+                                count = book_delete (fp,book,count);
+                                break;
+  
                         case 'q': return 0;
                         default: puts("Error!Arguments Exception!");
                 }
