@@ -57,22 +57,19 @@ int file_read(FILE *fp,str_book *book) {
 
 //function to write file
 void file_write (FILE *fp,str_book *book,int count,char flag) {
-        char buf[NUM_BUFFER];
         int i;
 
         if (flag = 'r') {
                 rewind (fp);
                 ftruncate (fileno(fp),0);
                 for (i = 0;i < count;i++) {
-                        sprintf (buf,"%s-%s-%s\n"
+                        fprintf (fp,"%s-%s-%s\n"
                                  ,book[i].name,book[i].auther,book[i].type);
-                        fputs (buf,fp);
                 }
                 puts ("File written");
         } else if (flag = 'a') {
-                sprintf (buf,"%s-%s-%s\n"
+                fprintf (fp,"%s-%s-%s\n"
                          ,book[count].name,book[count].auther,book[count].type);
-                fputs (buf,fp);
                 puts ("File written");
         } else {
                 puts ("Error:Exaccept flag!");
@@ -83,8 +80,6 @@ void file_write (FILE *fp,str_book *book,int count,char flag) {
 
 //function to add book
 int book_add (FILE *fp,str_book *book,int count) {
-        char buf[NUM_BUFFER];
-
         if (count >= NUM_BOOK) {
                 puts("Error!List was full!");
                 return count;
