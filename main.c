@@ -160,9 +160,7 @@ int main (int argc,char *argv[]) {
                 return 1;
         }
 
-        printf ("##########The Book Manager##########\n"
-                "    l:list a:add d:delete q:quit\n"
-                "####################################\n");
+        printf ("Book Manager\n");
         count = file_read (fp,book);
         printf ("%d books has read from %s.\n",count,argv[1]);
 
